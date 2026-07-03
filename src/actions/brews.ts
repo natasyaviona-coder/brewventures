@@ -1,6 +1,6 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { sheets } from "@/lib/sheets";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -19,97 +19,53 @@ const brewSchema = z.object({
   notes: z.string().optional().nullable(),
 });
 
-function parseDate(v?: string | null) {
-  if (!v) return undefined;
+function nn<T>(v: T | undefined | null | ""): T | null {
+  return v === undefined || v === null || v === "" ? null : v;
+}
+
+function parseDate(v?: string | null): string {
+  if (!v) return new Date().toISOString();
   const d = new Date(v);
-  return isNaN(d.getTime()) ? undefined : d;
+  return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
 }
 
 export async function createBrew(raw: unknown) {
   const data = brewSchema.parse(raw);
-
-  const brew = await prisma.$transaction(async (tx) => {
-    const bean = await tx.bean.findUniqueOrThrow({ where: { id: data.beanId } });
-    const newRemaining = Math.max(0, bean.remainingGrams - data.dose);
-    await tx.bean.update({
-      where: { id: data.beanId },
-      data: { remainingGrams: newRemaining },
-    });
-    return tx.brew.create({
-      data: {
-        beanId: data.beanId,
-        brewedAt: parseDate(data.brewedAt) ?? new Date(),
-        method: data.method,
-        dose: data.dose,
-        water: data.water,
-        grinder: data.grinder || null,
-        grindSize: data.grindSize || null,
-        grindAdjustment: data.grindAdjustment ?? null,
-        pours: data.pours ?? null,
-        waterTemp: data.waterTemp ?? null,
-        brewTimeSec: data.brewTimeSec ?? null,
-        notes: data.notes || null,
-      },
-    });
+  const brew = await sheets.createBrew({
+    beanId: data.beanId,
+    brewedAt: parseDate(data.brewedAt),
+    method: data.method,
+    dose: data.dose,
+    water: data.water,
+    grinder: nn(data.grinder),
+    grindSize: nn(data.grindSize),
+    grindAdjustment: nn(data.grindAdjustment),
+    pours: nn(data.pours),
+    waterTemp: nn(data.waterTemp),
+    brewTimeSec: nn(data.brewTimeSec),
+    notes: nn(data.notes),
   });
-
   revalidatePath("/");
   return brew;
 }
 
 export async function updateBrew(id: string, raw: unknown) {
   const data = brewSchema.partial().parse(raw);
-  const existing = await prisma.brew.findUniqueOrThrow({ where: { id } });
-
-  const brew = await prisma.$transaction(async (tx) => {
-    if (data.dose !== undefined && data.dose !== existing.dose) {
-      const delta = data.dose - existing.dose;
-      await tx.bean.update({
-        where: { id: existing.beanId },
-        data: { remainingGrams: { decrement: delta } },
-      });
-    }
-    return tx.brew.update({
-      where: { id },
-      data: {
-        ...data,
-        brewedAt: data.brewedAt ? parseDate(data.brewedAt) : undefined,
-        grinder: data.grinder ?? undefined,
-        grindSize: data.grindSize ?? undefined,
-        notes: data.notes ?? undefined,
-      },
-    });
+  const brew = await sheets.updateBrew(id, {
+    ...data,
+    brewedAt: data.brewedAt !== undefined ? parseDate(data.brewedAt) : undefined,
   });
-
   revalidatePath("/");
   return brew;
 }
 
 export async function deleteBrew(id: string) {
-  const existing = await prisma.brew.findUniqueOrThrow({ where: { id } });
-  await prisma.$transaction([
-    prisma.bean.update({
-      where: { id: existing.beanId },
-      data: { remainingGrams: { increment: existing.dose } },
-    }),
-    prisma.brew.delete({ where: { id } }),
-  ]);
+  await sheets.deleteBrew(id);
   revalidatePath("/");
 }
 
 export async function duplicateBrew(id: string) {
-  const src = await prisma.brew.findUniqueOrThrow({ where: { id } });
-  return createBrew({
-    beanId: src.beanId,
-    method: src.method,
-    dose: src.dose,
-    water: src.water,
-    grinder: src.grinder,
-    grindSize: src.grindSize,
-    grindAdjustment: src.grindAdjustment,
-    pours: src.pours,
-    waterTemp: src.waterTemp,
-    brewTimeSec: src.brewTimeSec,
-    notes: src.notes,
-  });
+  const brew = await sheets.duplicateBrew(id);
+  revalidatePath("/");
+  return brew;
 }

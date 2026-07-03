@@ -1,8 +1,6 @@
-import type { Bean, Brew, Tasting } from "@prisma/client";
+import type { BeanWithBrews, Tasting } from "@/lib/types";
 
-export type BeanWithBrews = Bean & {
-  brews: (Brew & { tasting: Tasting | null })[];
-};
+export type { BeanWithBrews };
 
 export function beanAverageEnjoyment(bean: BeanWithBrews): number | null {
   const scores = bean.brews

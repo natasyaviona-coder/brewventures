@@ -1,6 +1,6 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { sheets } from "@/lib/sheets";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -19,39 +19,29 @@ const tastingSchema = z.object({
   comments: z.string().optional().nullable(),
 });
 
+function nn<T>(v: T | undefined | null | ""): T | null {
+  return v === undefined || v === null || v === "" ? null : v;
+}
+
 export async function upsertTasting(raw: unknown) {
   const data = tastingSchema.parse(raw);
-  const t = await prisma.tasting.upsert({
-    where: { brewId: data.brewId },
-    create: {
-      brewId: data.brewId,
-      bitterness: data.bitterness,
-      acidity: data.acidity,
-      sweetness: data.sweetness,
-      body: data.body,
-      aroma: data.aroma,
-      aftertaste: data.aftertaste,
-      enjoyment: data.enjoyment,
-      flavorNotes: data.flavorNotes || null,
-      comments: data.comments || null,
-    },
-    update: {
-      bitterness: data.bitterness,
-      acidity: data.acidity,
-      sweetness: data.sweetness,
-      body: data.body,
-      aroma: data.aroma,
-      aftertaste: data.aftertaste,
-      enjoyment: data.enjoyment,
-      flavorNotes: data.flavorNotes || null,
-      comments: data.comments || null,
-    },
+  const t = await sheets.upsertTasting({
+    brewId: data.brewId,
+    bitterness: data.bitterness,
+    acidity: data.acidity,
+    sweetness: data.sweetness,
+    body: data.body,
+    aroma: data.aroma,
+    aftertaste: data.aftertaste,
+    enjoyment: data.enjoyment,
+    flavorNotes: nn(data.flavorNotes),
+    comments: nn(data.comments),
   });
   revalidatePath("/");
   return t;
 }
 
 export async function deleteTasting(id: string) {
-  await prisma.tasting.delete({ where: { id } });
+  await sheets.deleteTasting(id);
   revalidatePath("/");
 }

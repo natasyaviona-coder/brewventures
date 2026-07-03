@@ -7,7 +7,7 @@ import { Input, Textarea, Select, Field } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ImageCropper } from "@/components/image-cropper";
 import { createBean, updateBean } from "@/actions/beans";
-import type { Bean } from "@prisma/client";
+import type { Bean } from "@/lib/types";
 import { formatDateTimeLocalInput } from "@/lib/utils";
 
 type BeanInput = {

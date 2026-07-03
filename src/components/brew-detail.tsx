@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import type { Brew, Tasting } from "@prisma/client";
+import type { Brew, Tasting } from "@/lib/types";
 import { Stars, Scale } from "@/components/ui/rating";
 import { Button } from "@/components/ui/button";
 import { Confirm } from "@/components/ui/modal";

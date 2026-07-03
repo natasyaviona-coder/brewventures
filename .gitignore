@@ -40,10 +40,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# prisma / sqlite
-/prisma/dev.db
-/prisma/dev.db-journal
-/prisma/migrations/dev/
-
 # claude code local session state
 /.claude/

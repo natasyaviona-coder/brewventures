@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input, Textarea, Select, Field } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { createBrew } from "@/actions/brews";
-import type { Bean } from "@prisma/client";
+import type { Bean } from "@/lib/types";
 import { formatDateTimeLocalInput } from "@/lib/utils";
 
 type BrewInput = {

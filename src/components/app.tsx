@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import type { Bean } from "@prisma/client";
+import type { Bean } from "@/lib/types";
 import type { BeanWithBrews, DashboardStats } from "@/lib/stats";
 import { Dashboard } from "@/components/dashboard";
 import { BeanCard } from "@/components/bean-card";
@@ -16,9 +16,11 @@ import { ThemeToggle } from "@/components/theme-toggle";
 export function App({
   beans,
   stats,
+  configError,
 }: {
   beans: BeanWithBrews[];
   stats: DashboardStats;
+  configError?: string | null;
 }) {
   const [search, setSearch] = React.useState("");
   const [drawerBeanId, setDrawerBeanId] = React.useState<string | null>(null);
@@ -87,6 +89,17 @@ export function App({
         </div>
       </header>
 
+      {configError && (
+        <div className="rounded-xl border border-[var(--destructive)] bg-[var(--destructive)]/10 p-4 text-sm">
+          <div className="font-semibold text-[var(--destructive)]">Google Sheets not connected</div>
+          <div className="text-[var(--foreground)] mt-1">
+            Set <code className="px-1 rounded bg-[var(--muted)]">SHEETS_WEBAPP_URL</code> and{" "}
+            <code className="px-1 rounded bg-[var(--muted)]">SHEETS_SECRET</code> in{" "}
+            <code className="px-1 rounded bg-[var(--muted)]">.env.local</code>. See README for the Apps Script setup.
+          </div>
+          <div className="text-xs text-[var(--muted-foreground)] mt-2 font-mono">{configError}</div>
+        </div>
+      )}
       <Dashboard stats={stats} />
 
       <section ref={sectionRefs.library} className="flex flex-col gap-4">

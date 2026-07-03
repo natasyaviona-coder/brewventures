@@ -1,6 +1,6 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
+import { sheets } from "@/lib/sheets";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -22,33 +22,35 @@ const beanSchema = z.object({
   roastDate: z.string().optional().nullable(),
 });
 
-function parseDate(v?: string | null) {
+function nn<T>(v: T | undefined | null | ""): T | null {
+  return v === undefined || v === null || v === "" ? null : v;
+}
+
+function parseDate(v?: string | null): string | null {
   if (!v) return null;
   const d = new Date(v);
-  return isNaN(d.getTime()) ? null : d;
+  return isNaN(d.getTime()) ? null : d.toISOString();
 }
 
 export async function createBean(raw: unknown) {
   const data = beanSchema.parse(raw);
-  const bean = await prisma.bean.create({
-    data: {
-      name: data.name,
-      roaster: data.roaster || null,
-      origin: data.origin || null,
-      process: data.process || null,
-      roastLevel: data.roastLevel || null,
-      purchaseDate: parseDate(data.purchaseDate),
-      price: data.price ?? null,
-      totalGrams: data.totalGrams,
-      remainingGrams: data.totalGrams,
-      tastingNotes: data.tastingNotes || null,
-      personalNotes: data.personalNotes || null,
-      imageUrl: data.imageUrl || null,
-      altitude: data.altitude || null,
-      variety: data.variety || null,
-      producer: data.producer || null,
-      roastDate: parseDate(data.roastDate),
-    },
+  const bean = await sheets.createBean({
+    name: data.name,
+    roaster: nn(data.roaster),
+    origin: nn(data.origin),
+    process: nn(data.process),
+    roastLevel: nn(data.roastLevel),
+    purchaseDate: parseDate(data.purchaseDate),
+    price: nn(data.price),
+    totalGrams: data.totalGrams,
+    remainingGrams: data.totalGrams,
+    tastingNotes: nn(data.tastingNotes),
+    personalNotes: nn(data.personalNotes),
+    imageUrl: nn(data.imageUrl),
+    altitude: nn(data.altitude),
+    variety: nn(data.variety),
+    producer: nn(data.producer),
+    roastDate: parseDate(data.roastDate),
   });
   revalidatePath("/");
   return bean;
@@ -56,24 +58,16 @@ export async function createBean(raw: unknown) {
 
 export async function updateBean(id: string, raw: unknown) {
   const data = beanSchema.partial().parse(raw);
-  const existing = await prisma.bean.findUniqueOrThrow({ where: { id } });
-  const newTotal = data.totalGrams ?? existing.totalGrams;
-  const used = existing.totalGrams - existing.remainingGrams;
-  const bean = await prisma.bean.update({
-    where: { id },
-    data: {
-      ...data,
-      purchaseDate: data.purchaseDate !== undefined ? parseDate(data.purchaseDate) : undefined,
-      roastDate: data.roastDate !== undefined ? parseDate(data.roastDate) : undefined,
-      totalGrams: newTotal,
-      remainingGrams: Math.max(0, newTotal - used),
-    },
+  const bean = await sheets.updateBean(id, {
+    ...data,
+    purchaseDate: data.purchaseDate !== undefined ? parseDate(data.purchaseDate) : undefined,
+    roastDate: data.roastDate !== undefined ? parseDate(data.roastDate) : undefined,
   });
   revalidatePath("/");
   return bean;
 }
 
 export async function deleteBean(id: string) {
-  await prisma.bean.delete({ where: { id } });
+  await sheets.deleteBean(id);
   revalidatePath("/");
 }
