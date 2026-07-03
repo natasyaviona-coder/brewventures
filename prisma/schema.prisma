@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Bean {
+  id             String    @id @default(cuid())
+  name           String
+  roaster        String?
+  origin         String?
+  process        String?
+  roastLevel     String?
+  purchaseDate   DateTime?
+  price          Float?
+  totalGrams     Float
+  remainingGrams Float
+  tastingNotes   String?
+  personalNotes  String?
+  imageUrl       String?
+  altitude       String?
+  variety        String?
+  producer       String?
+  roastDate      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  brews          Brew[]
+}
+
+model Brew {
+  id              String   @id @default(cuid())
+  beanId          String
+  bean            Bean     @relation(fields: [beanId], references: [id], onDelete: Cascade)
+  brewedAt        DateTime @default(now())
+  method          String   @default("V60")
+  dose            Float
+  water           Float
+  grinder         String?
+  grindSize       String?
+  grindAdjustment Int?
+  pours           Int?
+  waterTemp       Float?
+  brewTimeSec     Int?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  tasting         Tasting?
+}
+
+model Tasting {
+  id          String   @id @default(cuid())
+  brewId      String   @unique
+  brew        Brew     @relation(fields: [brewId], references: [id], onDelete: Cascade)
+  bitterness  Int
+  acidity     Int
+  sweetness   Int
+  body        Int
+  aroma       Int
+  aftertaste  Int
+  enjoyment   Int
+  flavorNotes String?
+  comments    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
