@@ -34,6 +34,11 @@ function parseDate(v?: string | null): string | null {
 
 export async function createBean(raw: unknown) {
   const data = beanSchema.parse(raw);
+  if (data.imageUrl && data.imageUrl.length > 45000) {
+    throw new Error(
+      "Bean image is too large for Google Sheets (>45KB). Try a smaller crop.",
+    );
+  }
   const bean = await sheets.createBean({
     name: data.name,
     roaster: nn(data.roaster),
@@ -58,6 +63,11 @@ export async function createBean(raw: unknown) {
 
 export async function updateBean(id: string, raw: unknown) {
   const data = beanSchema.partial().parse(raw);
+  if (data.imageUrl && data.imageUrl.length > 45000) {
+    throw new Error(
+      "Bean image is too large for Google Sheets (>45KB). Try a smaller crop.",
+    );
+  }
   const bean = await sheets.updateBean(id, {
     ...data,
     purchaseDate: data.purchaseDate !== undefined ? parseDate(data.purchaseDate) : undefined,

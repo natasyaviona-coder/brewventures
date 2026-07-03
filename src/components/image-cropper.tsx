@@ -21,7 +21,7 @@ async function cropImage(imageSrc: string, area: Area): Promise<string> {
     image.src = imageSrc;
   });
 
-  const outSize = Math.min(1024, Math.round(Math.max(area.width, area.height)));
+  const outSize = Math.min(400, Math.round(Math.max(area.width, area.height)));
   const canvas = document.createElement("canvas");
   canvas.width = outSize;
   canvas.height = outSize;
@@ -39,7 +39,14 @@ async function cropImage(imageSrc: string, area: Area): Promise<string> {
     outSize,
     outSize,
   );
-  return canvas.toDataURL("image/jpeg", 0.92);
+
+  let quality = 0.75;
+  let dataUrl = canvas.toDataURL("image/jpeg", quality);
+  while (dataUrl.length > 45000 && quality > 0.3) {
+    quality -= 0.1;
+    dataUrl = canvas.toDataURL("image/jpeg", quality);
+  }
+  return dataUrl;
 }
 
 export function ImageCropper({ open, imageSrc, onCancel, onCropped }: Props) {

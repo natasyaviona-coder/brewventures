@@ -172,7 +172,10 @@ export function BeanForm({
     if (!canSubmit) return;
     startTransition(async () => {
       try {
-        const payload = { ...form, price: form.price || null };
+        const payload: Record<string, unknown> = { ...form, price: form.price || null };
+        if (editing && payload.imageUrl === (editing.imageUrl ?? "")) {
+          delete payload.imageUrl;
+        }
         if (editing) {
           await updateBean(editing.id, payload);
           toast.success("Bean updated");
